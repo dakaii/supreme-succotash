@@ -1,14 +1,30 @@
 #![allow(clippy::result_large_err)]
 
+use std::vec;
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    metadata::Metadata,
-    token::{mint_to, MintTo},
+    metadata::{
+        create_metadata_accounts_v3,
+        mpl_token_metadata::types::{CollectionDetails, Creator, DataV2},
+        CreateMetadataAccountsV3, Metadata,
+    },
+    token_2022::{mint_to, MintTo},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 declare_id!("GTjaVSgTmZnk6XsGuhTtYrviDagB2WD2D9CwJHbSPZXy");
+
+#[constant]
+pub const NAME: &str = "Token Lottery Ticket #";
+
+#[constant]
+pub const SYMBOL: &str = "TLT";
+
+#[constant]
+pub const URI: &str =
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7sl2d1WKcd9f69uOCgvK3QWN6P2eKeVs4Lg&s";
 
 #[program]
 pub mod token_lottery {
@@ -50,6 +66,39 @@ pub fn initialize_lottery(ctx: Context<InitializeLottery>) -> Result<()> {
             signer_seeds,
         ),
         1,
+    )?;
+
+    msg!("Creating the metadata account");
+    create_metadata_accounts_v3(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            CreateMetadataAccountsV3 {
+                metadata: ctx.accounts.metadata.to_account_info(),
+                mint: ctx.accounts.collection_mint.to_account_info(),
+                mint_authority: ctx.accounts.collection_mint.to_account_info(),
+                payer: ctx.accounts.payer.to_account_info(),
+                update_authority: ctx.accounts.collection_mint.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                rent: ctx.accounts.rent.to_account_info(),
+            },
+            &signer_seeds,
+        ),
+        DataV2 {
+            name: NAME.to_string(),
+            symbol: SYMBOL.to_string(),
+            uri: URI.to_string(),
+            seller_fee_basis_points: 0,
+            creators: Some(vec![Creator {
+                address: ctx.accounts.collection_mint.key(),
+                verified: false,
+                share: 100,
+            }]),
+            collection: None,
+            uses: None,
+        },
+        true,
+        true,
+        Some(CollectionDetails::V1 { size: 0 }),
     )?;
 
     Ok(())
@@ -129,6 +178,7 @@ pub struct InitializeLottery<'info> {
     pub associate_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[account]
