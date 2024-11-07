@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::Metadata,
+    token::{mint_to, MintTo},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
@@ -33,12 +34,23 @@ pub mod token_lottery {
     }
 }
 
-pub fn initialize_lottery(_ctx: Context<InitializeLottery>) -> Result<()> {
-    // let lottery = &mut ctx.accounts.token_lottery;
-    // lottery.lottery_pot_amount = 0;
-    // lottery.total_tickets = 0;
-    // lottery.winner_picked = false;
-    // lottery.winner = 0;
+pub fn initialize_lottery(ctx: Context<InitializeLottery>) -> Result<()> {
+    let signer_seeds: &[&[&[u8]]] = &[&[b"collection_mint".as_ref(), &[ctx.bumps.collection_mint]]];
+
+    msg!("Creating a mint account");
+
+    mint_to(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            MintTo {
+                mint: ctx.accounts.collection_mint.to_account_info(),
+                to: ctx.accounts.collection_token_account.to_account_info(),
+                authority: ctx.accounts.payer.to_account_info(),
+            },
+            signer_seeds,
+        ),
+        1,
+    )?;
 
     Ok(())
 }
