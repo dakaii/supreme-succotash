@@ -142,5 +142,22 @@ export type TokenLottery = {
         ]
       }
     }
+  ],
+  "constants": [
+    {
+      "name": "name",
+      "type": "string",
+      "value": "\"Token Lottery Ticket #\""
+    },
+    {
+      "name": "symbol",
+      "type": "string",
+      "value": "\"TLT\""
+    },
+    {
+      "name": "uri",
+      "type": "string",
+      "value": "\"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7sl2d1WKcd9f69uOCgvK3QWN6P2eKeVs4Lg&s\""
+    }
   ]
 };
